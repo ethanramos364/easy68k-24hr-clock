@@ -1,0 +1,188 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 2024-12-13 5:55:16 PM
+
+00000000                             1  *---------------------------------------------------------------
+00000000                             2  * Title      : clock.x68 
+00000000                             3  * Your Name  : Ethan Ramos
+00000000                             4  * Your ID    : 1274058
+00000000                             5  * Date       : 2024/11/28
+00000000                             6  
+00000000                             7  * I have exclusive control over this submission via my password. 
+00000000                             8  * By including this statement in this header, I certify that
+00000000                             9  * I have read and understood the University policy in academic
+00000000                            10  * integrity and I assert that this work is my own. I have 
+00000000                            11  * not used any unapproved external resources including LLM 
+00000000                            12  * models. Furthermore, I certify that is assignment was 
+00000000                            13  * prepared by me specifically for this course.
+00000000                            14  
+00000000                            15  *---------------------------------------------------------------
+00001000                            16      ORG    $1000
+00001000                            17  START:      
+00001000  21FC 0000109E 0078        18              MOVE.L  #ISR6,$78        ;put the isr6 to the correct position in the vector table
+00001008  21FC 000011C4 007C        19              MOVE.L  #ISR7,$7C        ;put the isr7 to the correct position in the vector table
+00001010                            20  
+00001010  163C 0000                 21              MOVE.B  #0,D3              ;change
+00001014  7020                      22              MOVE.L  #32,D0           ;task number 32
+00001016  4201                      23              CLR.B   D1               ;parameter: display window
+00001018  4E4F                      24              TRAP    #15              ;system call
+0000101A  B63C 0000                 25  MAIN        CMP.B   #0,D3            ;compare 0 to d3 to check if count is 0
+0000101E  66FA                      26              BNE     MAIN             ;keep polling if not ready
+00001020                            27              
+00001020  43F9 00E0000C             28              LEA     $E0000C,A1    ;load address of 1st position of seconds display into a1
+00001026  7400                      29              MOVE.L  #0,D2         ;clear d2
+00001028  1439 00001228             30              MOVE.B  SECONDS,D2    ;load the seconds into d2
+0000102E  84FC 000A                 31              DIVU.W  #$0A,D2       ;divide the seconds by 10 to get the 1st digit of seconds 
+00001032  6100 00DE                 32              BSR     WRITECHAR     ;write the char 
+00001036  4842                      33              SWAP    D2            ;swap to get the reminder which is the second digit of the seconds
+00001038  43F9 00E0000E             34              LEA     $E0000E,A1    ;load address of 2nd position of seconds display into a1
+0000103E  6100 00D2                 35              BSR     WRITECHAR     ;write the char
+00001042                            36                          
+00001042                            37              
+00001042  43F9 00E00006             38              LEA     $E00006,A1   ;load address of 1st position of minutes display into a1
+00001048  7400                      39              MOVE.L  #0,D2        ;clear d2
+0000104A  1439 00001227             40              MOVE.B  MINUTES,D2   ;load minutes into d2
+00001050  84FC 000A                 41              DIVU.W  #10,D2       ;divide the minutes by 10 to get the 1st digit of the minutes
+00001054  6100 00BC                 42              BSR     WRITECHAR    ;write the char 
+00001058  4842                      43              SWAP    D2           ;swap to get the reminder which is the second digit of the minutes
+0000105A  43F9 00E00008             44              LEA     $E00008,A1   ;load address of 2nd position of minutes display into a1
+00001060  6100 00B0                 45              BSR     WRITECHAR    ;write the char
+00001064  13FC 0040 00E0000A        46              MOVE.B  #%1000000,$E0000A   ;write a dash 
+0000106C                            47              
+0000106C                            48  
+0000106C                            49              
+0000106C  43F9 00E00000             50              LEA     $E00000,A1  ;load address of 1st position of hours display into a1
+00001072  7400                      51              MOVE.L  #0,D2       ;clear d2
+00001074  1439 00001226             52              MOVE.B  HOURS,D2    ;load the hours into d2
+0000107A  84FC 000A                 53              DIVU.W  #10,D2      ;divide the hours by 10 to get the 1st digit of the minutes
+0000107E  6100 0092                 54              BSR     WRITECHAR   ;write the char
+00001082  4842                      55              SWAP    D2          ;swap to get the reminder which is the second digit of the hours
+00001084  43F9 00E00002             56              LEA     $E00002,A1  ;load address of 2st position of hours display into a1
+0000108A  6100 0086                 57              BSR     WRITECHAR         ;write the char
+0000108E  13FC 0040 00E00004        58              MOVE.B  #%1000000,$E00004 ;write a dash 
+00001096  163C 0028                 59              MOVE.B  #40,D3            ; update the counter to restart the countdown        
+0000109A                            60  
+0000109A                            61  
+0000109A                            62              
+0000109A  6000 FF7E                 63              BRA     MAIN            
+0000109E                            64  ;D6 for seconds D4 for minutes D5 for hours
+0000109E  007C 0700                 65  ISR6        ORI.W   #$0700,SR          ;set priority level to 7
+000010A2  48E7 2040                 66              MOVEM.L A1/D2,-(A7)        ;save working registers
+000010A6  027C FEFF                 67              ANDI.W  #$FEFF,SR          ;change to priority level 6
+000010AA  0C03 0000                 68              CMPI.B  #0,D3              ;compare the counter to 0
+000010AE  6700 005C                 69              BEQ     EXIT               ;if it is 0 exit to avoid subtracting 0-1
+000010B2  5303                      70              SUB.B   #1,D3              ;decrement counter
+000010B4  6700 0008                 71              BEQ     CODE               ;if counter is run the code
+000010B8  4CDF 0204                 72              MOVEM.L (A7)+,A1/D2        ;restore working registers
+000010BC  4E73                      73              RTE                        
+000010BE  5239 00001228             74  CODE        ADD.B   #1,SECONDS         ;increment seconds and check if it needs to be reset
+000010C4  0C39 003C 00001228        75              CMPI.B  #60,SECONDS        ;compare 60 to seconds to see if reset is needed
+000010CC  6600 0010                 76              BNE     MINCHECK           ;if not check minutes
+000010D0  5239 00001227             77              ADD.B   #1,MINUTES         ;increment minutes and check if it needs to be reset
+000010D6  13FC 0000 00001228        78              MOVE.B  #0,SECONDS         ;reset the seconds
+000010DE  0C39 003C 00001227        79  MINCHECK    CMPI.B  #60,MINUTES        ;compare 60 to minutes to see if reset is needed
+000010E6  6600 0010                 80              BNE     HOURCHECK          ;if not check hours
+000010EA  5239 00001226             81              ADD.B   #1,HOURS           ;increment hours and check if it needs to be reset
+000010F0  13FC 0000 00001227        82              MOVE.B  #0,MINUTES         ;reset the minutes
+000010F8  0C39 0018 00001226        83  HOURCHECK   CMPI.B  #24,HOURS          ;see if hours needs to be reset 
+00001100  6600 000A                 84              BNE     EXIT               ; if not exit
+00001104  13FC 0000 00001226        85              MOVE.B  #0,HOURS           ;if so reset it    
+0000110C                            86             
+0000110C  4CDF 0204                 87  EXIT        MOVEM.L (A7)+,A1/D2        ;restore working registers
+00001110  4E73                      88              RTE
+00001112                            89              
+00001112                            90              
+00001112  0C02 0000                 91  WRITECHAR   CMPI.B  #0,D2 ;D2 has the value to be written into the clock either hh mm or ss
+00001116  6600 000C                 92              BNE     ONE
+0000111A  12B9 00001229             93              MOVE.B  CONVERT,(A1) ;A1 of the desired clock position to be changed
+00001120  6000 00A0                 94              BRA     END
+00001124  0C02 0001                 95  ONE         CMPI.B  #1,D2       ;labels one two three... etc are each a check to see what num 0-9 is in D2
+00001128  6600 000C                 96              BNE     TWO         ;the method will write that corresponding value into the clock
+0000112C  12B9 0000122A             97              MOVE.B  CONVERT+1,(A1)
+00001132  6000 008E                 98              BRA     END
+00001136  0C02 0002                 99  TWO         CMPI.B  #2,D2
+0000113A  6600 000C                100              BNE     THREE
+0000113E  12B9 0000122B            101              MOVE.B  CONVERT+2,(A1)
+00001144  6000 007C                102              BRA     END
+00001148  0C02 0003                103  THREE       CMPI.B  #3,D2
+0000114C  6600 000C                104              BNE     FOUR
+00001150  12B9 0000122C            105              MOVE.B  CONVERT+3,(A1)
+00001156  6000 006A                106              BRA     END
+0000115A  0C02 0004                107  FOUR        CMPI.B  #4,D2
+0000115E  6600 000C                108              BNE     FIVE
+00001162  12B9 0000122D            109              MOVE.B  CONVERT+4,(A1)
+00001168  6000 0058                110              BRA     END
+0000116C  0C02 0005                111  FIVE        CMPI.B  #5,D2
+00001170  6600 000C                112              BNE     SIX
+00001174  12B9 0000122E            113              MOVE.B  CONVERT+5,(A1)
+0000117A  6000 0046                114              BRA     END
+0000117E  0C02 0006                115  SIX         CMPI.B  #6,D2
+00001182  6600 000C                116              BNE     SEVEN
+00001186  12B9 0000122F            117              MOVE.B  CONVERT+6,(A1)
+0000118C  6000 0034                118              BRA     END
+00001190  0C02 0007                119  SEVEN       CMPI.B  #7,D2
+00001194  6600 000C                120              BNE     EIGHT
+00001198  12B9 00001230            121              MOVE.B  CONVERT+7,(A1)
+0000119E  6000 0022                122              BRA     END
+000011A2  0C02 0008                123  EIGHT       CMPI.B  #8,D2
+000011A6  6600 000C                124              BNE     NINE
+000011AA  12B9 00001231            125              MOVE.B  CONVERT+8,(A1)
+000011B0  6000 0010                126              BRA     END
+000011B4  0C02 0009                127  NINE        CMPI.B  #9,D2
+000011B8  6600 0008                128              BNE     END
+000011BC  12B9 00001232            129              MOVE.B  CONVERT+9,(A1)
+000011C2  4E75                     130  END         RTS
+000011C4                           131  ;ISR 7 resets the clock to 00-00-00
+000011C4  027C FFFF                132  ISR7        ANDI.W  #$FFFF,SR  ;set priority level to 7
+000011C8  13FC 0000 00001226       133              MOVE.B  #0,HOURS   ;reset the hours minutes and seconds vars
+000011D0  13FC 0000 00001227       134              MOVE.B  #0,MINUTES
+000011D8  13FC 0000 00001228       135              MOVE.B  #0,SECONDS
+000011E0  13FC 0000 00E00000       136              MOVE.B  #0,$E00000 ;move 0 into the correct positions separated by a dash (-)
+000011E8  13FC 0000 00E00002       137              MOVE.B  #0,$E00002
+000011F0  13FC 0040 00E00004       138              MOVE.B  #%1000000,$E00004
+000011F8  13FC 0000 00E00006       139              MOVE.B  #0,$E00006
+00001200  13FC 0000 00E00008       140              MOVE.B  #0,$E00008
+00001208  13FC 0040 00E0000A       141              MOVE.B  #%1000000,$E0000A
+00001210  13FC 0000 00E0000C       142              MOVE.B  #0,$E0000C
+00001218  13FC 0000 00E0000E       143              MOVE.B  #0,$E0000E
+00001220  163C 0000                144              MOVE.B  #0,D3
+00001224  4E73                     145              RTE
+00001226                           146  
+00001226= 00                       147  HOURS       DC.B    $0
+00001227= 00                       148  MINUTES     DC.B    $0 
+00001228= 00                       149  SECONDS     DC.B    $0        
+00001229= 3F 06 5B 4F 66 6D ...    150  CONVERT     DC.B    $3F, $06, $5B, $4F, $66, $6D, $7D, $07, $7F, $6F ;values to write 0-9 into the clock
+00001233                           151  
+00001233                           152  * Put variables and constants here
+00001233                           153      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CODE                10BE
+CONVERT             1229
+EIGHT               11A2
+END                 11C2
+EXIT                110C
+FIVE                116C
+FOUR                115A
+HOURCHECK           10F8
+HOURS               1226
+ISR6                109E
+ISR7                11C4
+MAIN                101A
+MINCHECK            10DE
+MINUTES             1227
+NINE                11B4
+ONE                 1124
+SECONDS             1228
+SEVEN               1190
+SIX                 117E
+START               1000
+THREE               1148
+TWO                 1136
+WRITECHAR           1112
